@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Assignments — {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-4xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <a href="{% url 'teacher_course_detail' slug=course.slug %}" class="text-xs text-[#8b949e] hover:text-white">��� {{ course.title }}</a>
+      <h1 class="text-2xl font-bold text-white mt-1">Assignments</h1>
+    </div>
+    <a href="{% url 'assignment_create' course_slug=course.slug %}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium">+ New Assignment</a>
+  </div>
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+    <table class="w-full">
+      <thead>
+        <tr class="border-b border-[#30363d]">
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Assignment</th>
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Due</th>
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Submissions</th>
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in assignments %}
+          <tr class="border-b border-[#30363d] hover:bg-[#21262d]">
+            <td class="px-6 py-4 text-white font-medium">{{ a.title }}</td>
+            <td class="px-6 py-4 text-[#8b949e] text-sm">{{ a.due_date|date:"M d, Y"|default:"No due date" }}</td>
+            <td class="px-6 py-4 text-[#c9d1d9]">
+              {{ a.get_submission_count }} total
+              {% if a.get_pending_count %}<span class="text-yellow-400 ml-1">({{ a.get_pending_count }} pending)</span>{% endif %}
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex gap-3 text-xs">
+                <a href="{% url 'submission_list' assignment_id=a.id %}" class="text-blue-400 hover:text-blue-300">Grade</a>
+                <a href="{% url 'assignment_edit' assignment_id=a.id %}" class="text-yellow-400 hover:text-yellow-300">Edit</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="px-6 py-12 text-center text-[#8b949e]">No assignments yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

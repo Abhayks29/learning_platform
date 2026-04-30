@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Submit: {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-2xl mx-auto">
+  <a href="{% url 'assignment_detail' assignment_id=assignment.id %}" class="text-xs text-[#8b949e] hover:text-white mb-4 block">← {{ assignment.title }}</a>
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-6">
+    <h1 class="text-xl font-bold text-white mb-2">Submit Assignment</h1>
+    <p class="text-[#8b949e] text-sm mb-6">{{ assignment.title }}</p>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% crispy form %}
+    </form>
+  </div>
+</div>
+{% endblock %}

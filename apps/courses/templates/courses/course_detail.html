@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.title }} — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-5xl mx-auto">
+  <!-- Header -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+    <div class="lg:col-span-2">
+      {% if course.category %}
+        <span class="text-xs text-blue-400 font-semibold uppercase tracking-wide">{{ course.category.name }}</span>
+      {% endif %}
+      <h1 class="text-3xl font-bold text-white mt-2 mb-3">{{ course.title }}</h1>
+      <p class="text-[#8b949e] text-base mb-4">{{ course.description }}</p>
+      <div class="flex flex-wrap gap-4 text-sm text-[#8b949e]">
+        <span>📚 {{ course.get_lesson_count }} lessons</span>
+        <span>⏱ {{ course.get_total_duration }} minutes</span>
+        <span>👥 {{ course.get_enrollment_count }} students</span>
+        <span>👨‍🏫 {{ course.teacher.get_full_name|default:course.teacher.username }}</span>
+      </div>
+    </div>
+
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-6 self-start">
+      {% if course.thumbnail %}
+        <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="w-full h-36 object-cover rounded-lg mb-4">
+      {% endif %}
+      {% if is_enrolled %}
+        <div class="text-center">
+          <span class="block text-green-400 font-semibold mb-3">✓ You're enrolled!</span>
+          {% if lessons %}
+            <a href="{% url 'lesson_detail' course_slug=course.slug lesson_id=lessons.first.id %}"
+              class="w-full block bg-blue-600 hover:bg-blue-700 text-white text-center font-bold py-3 rounded-lg">
+              Start Learning →
+            </a>
+          {% endif %}
+        </div>
+      {% elif user.is_authenticated and user.role == 'student' %}
+        <form method="post" action="{% url 'enroll' slug=course.slug %}">
+          {% csrf_token %}
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+            Enroll Now — Free
+          </button>
+        </form>
+      {% elif not user.is_authenticated %}
+        <a href="{% url 'account_login' %}" class="w-full block bg-blue-600 hover:bg-blue-700 text-white text-center font-bold py-3 rounded-lg">
+          Login to Enroll
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Curriculum -->
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+    <div class="px-6 py-4 border-b border-[#30363d]">
+      <h2 class="font-semibold text-white text-lg">Course Curriculum</h2>
+    </div>
+    {% for lesson in lessons %}
+      <div class="flex items-center justify-between px-6 py-4 border-b border-[#30363d] hover:bg-[#21262d]">
+        <div class="flex items-center gap-3">
+          {% if progress|default_if_none:'' and lesson.id in progress %}
+            <span class="text-green-400">✓</span>
+          {% else %}
+            <span class="text-[#8b949e]">▶</span>
+          {% endif %}
+          <div>
+            <div class="text-white text-sm font-medium">{{ forloop.counter }}. {{ lesson.title }}</div>
+            {% if lesson.description %}
+              <div class="text-xs text-[#8b949e]">{{ lesson.description|truncatewords:12 }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-[#8b949e]">
+          {% if lesson.duration_minutes %}<span>{{ lesson.duration_minutes }} min</span>{% endif %}
+          {% if lesson.is_free_preview %}
+            <span class="bg-green-900 text-green-300 px-2 py-0.5 rounded">Free</span>
+          {% endif %}
+          {% if is_enrolled or lesson.is_free_preview %}
+            <a href="{% url 'lesson_detail' course_slug=course.slug lesson_id=lesson.id %}" class="text-blue-400 hover:text-blue-300">Watch →</a>
+          {% else %}
+            <span class="text-[#8b949e]">🔒 Locked</span>
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      <div class="px-6 py-12 text-center text-[#8b949e]">No lessons yet. Check back soon!</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

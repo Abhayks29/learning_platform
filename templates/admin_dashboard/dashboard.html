@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6">
+  <h1 class="text-3xl font-bold text-white mb-2">Admin Dashboard</h1>
+  <p class="text-[#8b949e] mb-8">Platform overview and management.</p>
+
+  <!-- Stats Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
+      <div class="text-3xl font-bold text-blue-400">{{ total_users }}</div>
+      <div class="text-sm text-[#8b949e] mt-1">Total Users</div>
+    </div>
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
+      <div class="text-3xl font-bold text-green-400">{{ published_courses }}</div>
+      <div class="text-sm text-[#8b949e] mt-1">Published Courses</div>
+    </div>
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
+      <div class="text-3xl font-bold text-yellow-400">{{ pending_courses }}</div>
+      <div class="text-sm text-[#8b949e] mt-1">Pending Approval</div>
+    </div>
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
+      <div class="text-3xl font-bold text-purple-400">{{ total_enrollments }}</div>
+      <div class="text-sm text-[#8b949e] mt-1">Total Enrollments</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Recent Users -->
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-[#30363d] flex items-center justify-between">
+        <h2 class="font-semibold text-white">Recent Users</h2>
+        <a href="/admin/users/user/" class="text-xs text-blue-400 hover:text-blue-300">View all →</a>
+      </div>
+      <table class="w-full">
+        <tbody>
+          {% for u in recent_users %}
+            <tr class="border-b border-[#30363d] hover:bg-[#21262d]">
+              <td class="px-6 py-3">
+                <div class="font-medium text-white text-sm">{{ u.username }}</div>
+                <div class="text-xs text-[#8b949e]">{{ u.email }}</div>
+              </td>
+              <td class="px-6 py-3">
+                <span class="text-xs px-2 py-0.5 rounded
+                  {% if u.role == 'admin' %}bg-red-900 text-red-300
+                  {% elif u.role == 'teacher' %}bg-purple-900 text-purple-300
+                  {% else %}bg-green-900 text-green-300{% endif %}">
+                  {{ u.get_role_display }}
+                </span>
+              </td>
+              <td class="px-6 py-3 text-right text-xs text-[#8b949e]">{{ u.created_at|date:"M d, Y" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="px-6 py-8 text-center text-[#8b949e]">No users yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Recent Courses -->
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-[#30363d] flex items-center justify-between">
+        <h2 class="font-semibold text-white">Recent Courses</h2>
+        <a href="/admin/courses/course/" class="text-xs text-blue-400 hover:text-blue-300">View all →</a>
+      </div>
+      <table class="w-full">
+        <tbody>
+          {% for course in recent_courses %}
+            <tr class="border-b border-[#30363d] hover:bg-[#21262d]">
+              <td class="px-6 py-3">
+                <div class="font-medium text-white text-sm">{{ course.title|truncatechars:40 }}</div>
+                <div class="text-xs text-[#8b949e]">by {{ course.teacher.username }}</div>
+              </td>
+              <td class="px-6 py-3">
+                <span class="text-xs px-2 py-0.5 rounded
+                  {% if course.status == 'published' %}bg-green-900 text-green-300
+                  {% elif course.status == 'pending' %}bg-yellow-900 text-yellow-300
+                  {% else %}bg-gray-800 text-gray-400{% endif %}">
+                  {{ course.get_status_display }}
+                </span>
+              </td>
+              <td class="px-6 py-3 text-right text-xs text-[#8b949e]">{{ course.created_at|date:"M d" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="3" class="px-6 py-8 text-center text-[#8b949e]">No courses yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

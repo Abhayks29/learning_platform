@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Grade Submission — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-3xl mx-auto">
+  <a href="{% url 'submission_list' assignment_id=submission.assignment.id %}" class="text-xs text-[#8b949e] hover:text-white mb-4 block">← Submissions</a>
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Submission -->
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
+      <h2 class="font-bold text-white mb-3">Submission</h2>
+      <div class="flex items-center gap-2 mb-4">
+        <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+          {{ submission.student.username|slice:":1"|upper }}
+        </div>
+        <div>
+          <div class="text-white text-sm font-medium">{{ submission.student.get_full_name|default:submission.student.username }}</div>
+          <div class="text-xs text-[#8b949e]">{{ submission.submitted_at|date:"M d, Y H:i" }}</div>
+        </div>
+      </div>
+      {% if submission.text_response %}
+        <div class="bg-[#0d1117] rounded-lg p-4 text-sm text-[#c9d1d9] max-h-64 overflow-y-auto">
+          {{ submission.text_response }}
+        </div>
+      {% endif %}
+      {% if submission.file %}
+        <a href="{{ submission.file.url }}" class="text-blue-400 hover:text-blue-300 text-sm mt-3 block">📎 Download File</a>
+      {% endif %}
+    </div>
+
+    <!-- Grading -->
+    <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
+      <h2 class="font-bold text-white mb-3">Grade (Max: {{ submission.assignment.max_score }})</h2>
+      {% crispy form %}
+    </div>
+  </div>
+</div>
+{% endblock %}

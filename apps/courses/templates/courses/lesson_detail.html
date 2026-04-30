@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}{{ lesson.title }} — {{ course.title }}{% endblock %}
+
+{% block sidebar %}
+<!-- Course Curriculum Sidebar -->
+<aside class="w-72 bg-[#161b22] border-r border-[#30363d] overflow-y-auto flex-shrink-0" style="max-height: calc(100vh - 56px);">
+  <div class="px-4 py-3 border-b border-[#30363d]">
+    <a href="{% url 'course_detail' slug=course.slug %}" class="text-xs text-blue-400 hover:text-blue-300">← Back to course</a>
+    <h2 class="text-white font-semibold text-sm mt-1 truncate">{{ course.title }}</h2>
+  </div>
+  <div class="py-2">
+    {% for l in lessons %}
+      <a href="{% url 'lesson_detail' course_slug=course.slug lesson_id=l.id %}"
+        class="flex items-center gap-3 px-4 py-3 hover:bg-[#21262d] transition
+          {% if l.id == lesson.id %}bg-[#21262d] border-l-2 border-blue-500{% endif %}">
+        <span class="text-sm {% if l.id == lesson.id %}text-blue-400{% else %}text-[#8b949e]{% endif %} w-5 text-center">
+          {{ forloop.counter }}
+        </span>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm {% if l.id == lesson.id %}text-white font-medium{% else %}text-[#c9d1d9]{% endif %} truncate">
+            {{ l.title }}
+          </div>
+          {% if l.duration_minutes %}
+            <div class="text-xs text-[#8b949e]">{{ l.duration_minutes }} min</div>
+          {% endif %}
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</aside>
+{% endblock %}
+
+{% block content %}
+<div class="flex-1 overflow-y-auto p-6 max-w-4xl">
+  <!-- Video Player -->
+  <div class="mb-6">
+    {% if lesson.video %}
+      <video id="lesson-video" class="plyr-video w-full rounded-xl" controls
+        data-lesson-id="{{ lesson.id }}"
+        src="{{ lesson.video.url }}">
+      </video>
+    {% elif lesson.video_url %}
+      <div class="aspect-video bg-black rounded-xl overflow-hidden">
+        <iframe src="{{ lesson.video_url }}" class="w-full h-full" allowfullscreen></iframe>
+      </div>
+    {% else %}
+      <div class="aspect-video bg-[#161b22] border border-[#30363d] rounded-xl flex items-center justify-center">
+        <p class="text-[#8b949e]">No video for this lesson.</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Lesson Info -->
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-6 mb-6">
+    <div class="flex items-start justify-between mb-4">
+      <h1 class="text-2xl font-bold text-white">{{ lesson.title }}</h1>
+      {% if not progress.completed %}
+        <button id="mark-complete-btn" data-lesson-id="{{ lesson.id }}"
+          class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap">
+          Mark Complete
+        </button>
+      {% else %}
+        <span class="text-green-400 font-medium text-sm">✓ Completed</span>
+      {% endif %}
+    </div>
+    {% if lesson.description %}
+      <div class="text-[#c9d1d9] leading-relaxed">{{ lesson.description }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Navigation -->
+  <div class="flex justify-between">
+    {% if prev_lesson %}
+      <a href="{% url 'lesson_detail' course_slug=course.slug lesson_id=prev_lesson.id %}"
+        class="flex items-center gap-2 text-[#8b949e] hover:text-white text-sm">
+        ← {{ prev_lesson.title|truncatechars:30 }}
+      </a>
+    {% else %}
+      <div></div>
+    {% endif %}
+    {% if next_lesson %}
+      <a href="{% url 'lesson_detail' course_slug=course.slug lesson_id=next_lesson.id %}"
+        class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+        {{ next_lesson.title|truncatechars:30 }} →
+      </a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const video = document.getElementById('lesson-video');
+  const lessonId = video ? video.dataset.lessonId : null;
+
+  if (video && lessonId) {
+    const player = new Plyr('#lesson-video');
+    let progressInterval = null;
+
+    player.on('play', () => {
+      progressInterval = setInterval(() => {
+        fetch(`/courses/lessons/${lessonId}/progress/`, {
+          method: 'POST',
+          headers: {'X-CSRFToken': '{{ csrf_token }}', 'Content-Type': 'application/x-www-form-urlencoded'},
+          body: `seconds=${Math.floor(player.currentTime)}`
+        });
+      }, 15000);
+    });
+
+    player.on('pause', () => clearInterval(progressInterval));
+    player.on('ended', () => {
+      clearInterval(progressInterval);
+      markComplete();
+    });
+  }
+
+  const markBtn = document.getElementById('mark-complete-btn');
+  if (markBtn) {
+    markBtn.addEventListener('click', markComplete);
+  }
+
+  function markComplete() {
+    const lessonId = markBtn ? markBtn.dataset.lessonId : null;
+    if (!lessonId) return;
+    fetch(`/courses/lessons/${lessonId}/complete/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': '{{ csrf_token }}'}
+    }).then(r => r.json()).then(data => {
+      if (data.completed && markBtn) {
+        markBtn.outerHTML = '<span class="text-green-400 font-medium text-sm">✓ Completed</span>';
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

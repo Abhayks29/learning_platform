@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ problem.title }} — EdTech Practice{% endblock %}
+
+{% block sidebar %}{% endblock %}
+
+{% block content %}
+<div class="flex h-[calc(100vh-56px)] overflow-hidden">
+
+  <!-- LEFT PANE: Problem -->
+  <div class="w-1/2 flex flex-col border-r border-[#30363d] overflow-hidden">
+
+    <!-- Problem Header -->
+    <div class="px-5 py-4 border-b border-[#30363d] bg-[#161b22] flex-shrink-0">
+      <div class="flex items-center gap-3 mb-1">
+        <h1 class="text-lg font-bold text-white">{{ problem.title }}</h1>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded
+          {% if problem.difficulty == 'easy' %}text-green-400 bg-green-900 bg-opacity-40
+          {% elif problem.difficulty == 'medium' %}text-yellow-400 bg-yellow-900 bg-opacity-40
+          {% else %}text-red-400 bg-red-900 bg-opacity-40{% endif %}">
+          {{ problem.get_difficulty_display }}
+        </span>
+      </div>
+      <div class="flex flex-wrap gap-1">
+        {% for tag in problem.get_tag_list %}
+          <span class="text-xs bg-[#21262d] text-[#8b949e] px-2 py-0.5 rounded">{{ tag }}</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex border-b border-[#30363d] bg-[#161b22] flex-shrink-0">
+      <button onclick="showTab('description')" id="tab-description"
+        class="tab-btn px-5 py-3 text-sm font-medium text-white border-b-2 border-blue-500">Description</button>
+      <button onclick="showTab('testcases')" id="tab-testcases"
+        class="tab-btn px-5 py-3 text-sm font-medium text-[#8b949e] hover:text-white">Test Cases</button>
+      <button onclick="showTab('submissions')" id="tab-submissions"
+        class="tab-btn px-5 py-3 text-sm font-medium text-[#8b949e] hover:text-white">My Submissions</button>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="flex-1 overflow-y-auto p-5">
+      <!-- Description -->
+      <div id="pane-description">
+        <div class="prose prose-invert max-w-none text-[#c9d1d9] text-sm leading-relaxed">
+          {{ problem.description|linebreaksbr }}
+        </div>
+      </div>
+
+      <!-- Test Cases -->
+      <div id="pane-testcases" class="hidden">
+        {% for tc in test_cases %}
+          <div class="bg-[#0d1117] border border-[#30363d] rounded-lg p-4 mb-3 font-mono text-sm">
+            <div class="text-[#8b949e] text-xs mb-1">Input:</div>
+            <div class="text-[#c9d1d9] mb-3">{{ tc.input_data }}</div>
+            <div class="text-[#8b949e] text-xs mb-1">Expected Output:</div>
+            <div class="text-green-400">{{ tc.expected_output }}</div>
+          </div>
+        {% empty %}
+          <p class="text-[#8b949e] text-sm">No visible test cases.</p>
+        {% endfor %}
+      </div>
+
+      <!-- Submissions -->
+      <div id="pane-submissions" class="hidden">
+        {% if user.is_authenticated %}
+          {% for sub in my_submissions %}
+            <div class="bg-[#0d1117] border border-[#30363d] rounded-lg p-4 mb-3">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium
+                  {% if sub.status == 'accepted' %}text-green-400
+                  {% elif sub.status == 'wrong' %}text-red-400
+                  {% elif sub.status == 'error' %}text-orange-400
+                  {% else %}text-[#8b949e]{% endif %}">
+                  {{ sub.get_status_display }}
+                </span>
+                <div class="text-xs text-[#8b949e]">
+                  {{ sub.language }} · {{ sub.submitted_at|date:"M d, Y H:i" }}
+                  {% if sub.runtime_ms %} · {{ sub.runtime_ms }}ms{% endif %}
+                </div>
+              </div>
+              {% if sub.output %}
+                <pre class="text-xs text-[#8b949e] overflow-x-auto">{{ sub.output|truncatechars:200 }}</pre>
+              {% endif %}
+            </div>
+          {% empty %}
+            <p class="text-[#8b949e] text-sm">No submissions yet.</p>
+          {% endfor %}
+        {% else %}
+          <p class="text-[#8b949e] text-sm"><a href="{% url 'account_login' %}" class="text-blue-400">Login</a> to see your submissions.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANE: Editor -->
+  <div class="w-1/2 flex flex-col overflow-hidden">
+
+    <!-- Editor Toolbar -->
+    <div class="px-4 py-3 border-b border-[#30363d] bg-[#161b22] flex items-center gap-3 flex-shrink-0">
+      <select id="language-select"
+        class="bg-[#0d1117] border border-[#30363d] text-[#c9d1d9] text-sm rounded px-3 py-1.5 focus:outline-none focus:border-blue-500">
+        <option value="python">Python</option>
+        <option value="javascript">JavaScript</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+      </select>
+      <div class="flex-1"></div>
+      {% if user.is_authenticated %}
+        <button id="run-btn" onclick="runCode()"
+          class="bg-[#21262d] hover:bg-[#30363d] text-white border border-[#30363d] px-4 py-1.5 rounded text-sm font-medium">
+          ▶ Run
+        </button>
+        <button id="submit-btn" onclick="submitCode()"
+          class="bg-green-700 hover:bg-green-600 text-white px-4 py-1.5 rounded text-sm font-medium">
+          Submit
+        </button>
+      {% else %}
+        <a href="{% url 'account_login' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded text-sm font-medium">Login to Submit</a>
+      {% endif %}
+    </div>
+
+    <!-- Monaco Editor -->
+    <div id="editor-container" class="flex-1 overflow-hidden"></div>
+
+    <!-- Output Console -->
+    <div class="border-t border-[#30363d] bg-[#0d1117] flex-shrink-0" style="height: 180px;">
+      <div class="px-4 py-2 border-b border-[#30363d] flex items-center justify-between">
+        <span class="text-xs text-[#8b949e] font-semibold uppercase">Output</span>
+        <span id="result-badge" class="text-xs px-2 py-0.5 rounded hidden"></span>
+      </div>
+      <pre id="output-console" class="p-4 text-xs font-mono text-[#c9d1d9] overflow-auto" style="height: 136px;">Click "Run" to test your code.</pre>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs/loader.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PROBLEM_SLUG = '{{ problem.slug }}';
+const CSRF_TOKEN = '{{ csrf_token }}';
+const STARTER_CODE = `{{ problem.starter_code|escapejs }}`;
+
+require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.44.0/min/vs' }});
+require(['vs/editor/editor.main'], function() {
+  window.editor = monaco.editor.create(document.getElementById('editor-container'), {
+    value: STARTER_CODE,
+    language: 'python',
+    theme: 'vs-dark',
+    fontSize: 14,
+    minimap: { enabled: false },
+    automaticLayout: true,
+    scrollBeyondLastLine: false,
+    lineNumbers: 'on',
+    tabSize: 4,
+    insertSpaces: true,
+  });
+});
+
+document.getElementById('language-select').addEventListener('change', function() {
+  if (window.editor) {
+    monaco.editor.setModelLanguage(window.editor.getModel(), this.value === 'cpp' ? 'cpp' : this.value);
+  }
+});
+
+function getCode() {
+  return window.editor ? window.editor.getValue() : '';
+}
+
+function showOutput(text, status) {
+  const console = document.getElementById('output-console');
+  const badge = document.getElementById('result-badge');
+  console.textContent = text;
+  badge.classList.remove('hidden', 'bg-green-900', 'text-green-300', 'bg-red-900', 'text-red-300', 'bg-yellow-900', 'text-yellow-300');
+  if (status === 'accepted') {
+    badge.textContent = '✓ Accepted';
+    badge.classList.add('bg-green-900', 'text-green-300');
+  } else if (status === 'wrong') {
+    badge.textContent = '✗ Wrong Answer';
+    badge.classList.add('bg-red-900', 'text-red-300');
+  } else if (status === 'error') {
+    badge.textContent = '⚠ Error';
+    badge.classList.add('bg-yellow-900', 'text-yellow-300');
+  }
+  badge.classList.remove('hidden');
+}
+
+function setLoading(btnId, loading) {
+  const btn = document.getElementById(btnId);
+  if (loading) {
+    btn.disabled = true;
+    btn.textContent = '...';
+  } else {
+    btn.disabled = false;
+    btn.textContent = btnId === 'run-btn' ? '▶ Run' : 'Submit';
+  }
+}
+
+async function runCode() {
+  setLoading('run-btn', true);
+  showOutput('Running...', null);
+  try {
+    const res = await fetch(`/practice/problems/${PROBLEM_SLUG}/run/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `code=${encodeURIComponent(getCode())}&language=${document.getElementById('language-select').value}`
+    });
+    const data = await res.json();
+    showOutput(data.output || 'No output.', data.status);
+  } catch(e) {
+    showOutput('Error: ' + e.message, 'error');
+  } finally {
+    setLoading('run-btn', false);
+  }
+}
+
+async function submitCode() {
+  setLoading('submit-btn', true);
+  showOutput('Submitting...', null);
+  try {
+    const res = await fetch(`/practice/problems/${PROBLEM_SLUG}/submit/`, {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/x-www-form-urlencoded'},
+      body: `code=${encodeURIComponent(getCode())}&language=${document.getElementById('language-select').value}`
+    });
+    const data = await res.json();
+    const rt = data.runtime_ms ? ` (${data.runtime_ms}ms)` : '';
+    showOutput((data.output || 'No output.') + rt, data.status);
+  } catch(e) {
+    showOutput('Error: ' + e.message, 'error');
+  } finally {
+    setLoading('submit-btn', false);
+  }
+}
+
+function showTab(name) {
+  ['description', 'testcases', 'submissions'].forEach(t => {
+    document.getElementById('pane-' + t).classList.toggle('hidden', t !== name);
+    const btn = document.getElementById('tab-' + t);
+    btn.classList.toggle('text-white', t === name);
+    btn.classList.toggle('border-b-2', t === name);
+    btn.classList.toggle('border-blue-500', t === name);
+    btn.classList.toggle('text-[#8b949e]', t !== name);
+  });
+}
+
+// Sidebar toggle
+document.getElementById('sidebar-toggle')?.addEventListener('click', function() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.toggle('hidden');
+});
+</script>
+{% endblock %}

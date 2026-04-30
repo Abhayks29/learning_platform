@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Manage: {{ course.title }}{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-5xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <a href="{% url 'teacher_course_list' %}" class="text-xs text-[#8b949e] hover:text-white">← My Courses</a>
+      <h1 class="text-2xl font-bold text-white mt-1">{{ course.title }}</h1>
+      <span class="text-xs px-2 py-0.5 rounded
+        {% if course.status == 'published' %}bg-green-900 text-green-300
+        {% elif course.status == 'pending' %}bg-yellow-900 text-yellow-300
+        {% else %}bg-gray-800 text-gray-400{% endif %}">
+        {{ course.get_status_display }}
+      </span>
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'course_edit' slug=course.slug %}" class="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Edit</a>
+      <a href="{% url 'lesson_create' course_slug=course.slug %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">+ Add Lesson</a>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Lessons -->
+    <div class="lg:col-span-2 bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-[#30363d] flex items-center justify-between">
+        <h2 class="font-semibold text-white">Lessons ({{ lessons.count }})</h2>
+        <a href="{% url 'lesson_create' course_slug=course.slug %}" class="text-xs text-blue-400 hover:text-blue-300">+ Add Lesson</a>
+      </div>
+      {% for lesson in lessons %}
+        <div class="flex items-center justify-between px-6 py-4 border-b border-[#30363d] hover:bg-[#21262d]">
+          <div class="flex items-center gap-3">
+            <span class="text-[#8b949e] text-sm w-6">{{ forloop.counter }}</span>
+            <div>
+              <div class="text-white text-sm font-medium">{{ lesson.title }}</div>
+              <div class="text-xs text-[#8b949e]">{{ lesson.duration_minutes }} min
+                {% if lesson.is_free_preview %}<span class="text-green-400 ml-1">· Free Preview</span>{% endif %}
+              </div>
+            </div>
+          </div>
+          <div class="flex gap-3 text-xs">
+            <a href="{% url 'lesson_edit' course_slug=course.slug lesson_id=lesson.id %}" class="text-yellow-400 hover:text-yellow-300">Edit</a>
+            <a href="{% url 'lesson_delete' course_slug=course.slug lesson_id=lesson.id %}" class="text-red-400 hover:text-red-300">Delete</a>
+          </div>
+        </div>
+      {% empty %}
+        <div class="px-6 py-10 text-center text-[#8b949e] text-sm">
+          No lessons yet. <a href="{% url 'lesson_create' course_slug=course.slug %}" class="text-blue-400">Add one →</a>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Quizzes and Assignments Sidebar -->
+    <div class="space-y-4">
+      <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-medium text-white text-sm">Quizzes</h3>
+          <a href="{% url 'quiz_create' course_slug=course.slug %}" class="text-xs text-blue-400 hover:text-blue-300">+ Add</a>
+        </div>
+        {% for quiz in course.quizzes.all %}
+          <div class="flex items-center justify-between py-2 border-t border-[#30363d]">
+            <span class="text-sm text-[#c9d1d9] truncate">{{ quiz.title }}</span>
+            <a href="{% url 'quiz_builder' quiz_id=quiz.id %}" class="text-xs text-blue-400 hover:text-blue-300 ml-2">Edit</a>
+          </div>
+        {% empty %}
+          <p class="text-xs text-[#8b949e]">No quizzes yet.</p>
+        {% endfor %}
+      </div>
+
+      <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-medium text-white text-sm">Assignments</h3>
+          <a href="{% url 'assignment_create' course_slug=course.slug %}" class="text-xs text-blue-400 hover:text-blue-300">+ Add</a>
+        </div>
+        {% for assignment in course.assignments.all %}
+          <div class="flex items-center justify-between py-2 border-t border-[#30363d]">
+            <span class="text-sm text-[#c9d1d9] truncate">{{ assignment.title }}</span>
+            <a href="{% url 'submission_list' assignment_id=assignment.id %}" class="text-xs text-blue-400 hover:text-blue-300 ml-2">Grade</a>
+          </div>
+        {% empty %}
+          <p class="text-xs text-[#8b949e]">No assignments yet.</p>
+        {% endfor %}
+      </div>
+
+      <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+        <h3 class="font-medium text-white text-sm mb-2">Enrolled Students ({{ enrollments.count }})</h3>
+        {% for enrollment in enrollments|slice:":5" %}
+          <div class="flex items-center gap-2 py-1">
+            <div class="w-6 h-6 rounded-full bg-blue-700 flex items-center justify-center text-white text-xs">
+              {{ enrollment.student.username|slice:":1"|upper }}
+            </div>
+            <span class="text-sm text-[#c9d1d9] truncate">{{ enrollment.student.username }}</span>
+          </div>
+        {% empty %}
+          <p class="text-xs text-[#8b949e]">No students yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

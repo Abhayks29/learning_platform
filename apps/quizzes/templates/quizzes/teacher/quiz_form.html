@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}{% if quiz %}Edit{% else %}Create{% endif %} Quiz — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-2xl mx-auto">
+  <a href="{% url 'teacher_quiz_list' course_slug=course.slug %}" class="text-xs text-[#8b949e] hover:text-white mb-4 block">← Quizzes</a>
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-6">
+    <h1 class="text-2xl font-bold text-white mb-6">{% if quiz %}Edit{% else %}Create{% endif %} Quiz</h1>
+    {% crispy form %}
+  </div>
+</div>
+{% endblock %}

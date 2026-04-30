@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Quiz Result — {{ quiz.title }}{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-3xl mx-auto">
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-8 text-center mb-6">
+    <div class="text-6xl font-bold mb-2 {% if attempt.passed %}text-green-400{% else %}text-red-400{% endif %}">
+      {{ attempt.score|floatformat:0 }}%
+    </div>
+    {% if attempt.passed %}
+      <div class="text-green-400 text-xl font-semibold mb-2">🎉 Passed!</div>
+    {% else %}
+      <div class="text-red-400 text-xl font-semibold mb-2">Not Passed</div>
+    {% endif %}
+    <p class="text-[#8b949e]">Passing score: {{ quiz.passing_score }}%</p>
+    <div class="flex gap-4 justify-center mt-6">
+      <a href="{% url 'course_detail' slug=quiz.course.slug %}" class="bg-[#21262d] hover:bg-[#30363d] text-white px-5 py-2 rounded-lg font-medium border border-[#30363d]">Back to Course</a>
+      <a href="{% url 'quiz_start' quiz_id=quiz.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium">Retake</a>
+    </div>
+  </div>
+
+  <!-- Answer Review -->
+  <h2 class="text-lg font-bold text-white mb-4">Answer Review</h2>
+  {% for answer in answers %}
+    <div class="bg-[#161b22] border rounded-xl p-5 mb-3
+      {% if answer.is_correct %}border-green-800{% else %}border-red-800{% endif %}">
+      <p class="text-white font-medium mb-3">{{ forloop.counter }}. {{ answer.question.text }}</p>
+      <div class="space-y-2">
+        {% for choice in answer.question.choices.all %}
+          <div class="flex items-center gap-2 px-3 py-2 rounded-lg
+            {% if choice.is_correct %}bg-green-900 bg-opacity-40
+            {% elif choice == answer.selected_choice and not choice.is_correct %}bg-red-900 bg-opacity-40{% endif %}">
+            <span class="text-sm {% if choice.is_correct %}text-green-400{% elif choice == answer.selected_choice %}text-red-400{% else %}text-[#8b949e]{% endif %}">
+              {% if choice.is_correct %}✓{% elif choice == answer.selected_choice %}✗{% else %}○{% endif %}
+            </span>
+            <span class="text-sm {% if choice.is_correct %}text-green-300{% elif choice == answer.selected_choice %}text-red-300{% else %}text-[#c9d1d9]{% endif %}">
+              {{ choice.text }}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+      {% if answer.question.explanation and not answer.is_correct %}
+        <p class="text-xs text-blue-400 mt-3 bg-blue-900 bg-opacity-30 px-3 py-2 rounded">
+          💡 {{ answer.question.explanation }}
+        </p>
+      {% endif %}
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

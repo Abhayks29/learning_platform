@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Leaderboard — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-3xl mx-auto">
+  <h1 class="text-3xl font-bold text-white mb-2">Leaderboard</h1>
+  <p class="text-[#8b949e] mb-8">Top students ranked by practice problems solved.</p>
+
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+    <table class="w-full">
+      <thead>
+        <tr class="border-b border-[#30363d] text-left">
+          <th class="px-6 py-4 text-xs text-[#8b949e] uppercase font-semibold">#</th>
+          <th class="px-6 py-4 text-xs text-[#8b949e] uppercase font-semibold">Student</th>
+          <th class="px-6 py-4 text-xs text-[#8b949e] uppercase font-semibold text-right">Solved</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in top_students %}
+          <tr class="border-b border-[#30363d] hover:bg-[#21262d] transition
+            {% if student == user %}bg-blue-900 bg-opacity-20{% endif %}">
+            <td class="px-6 py-4 text-[#8b949e] font-mono">
+              {% if forloop.counter == 1 %}<span class="text-yellow-400 text-lg">🥇</span>
+              {% elif forloop.counter == 2 %}<span class="text-gray-300 text-lg">🥈</span>
+              {% elif forloop.counter == 3 %}<span class="text-amber-600 text-lg">🥉</span>
+              {% else %}{{ forloop.counter }}{% endif %}
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex items-center gap-3">
+                {% if student.avatar %}
+                  <img src="{{ student.avatar.url }}" class="w-8 h-8 rounded-full object-cover" alt="">
+                {% else %}
+                  <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                    {{ student.username|slice:":1"|upper }}
+                  </div>
+                {% endif %}
+                <div>
+                  <div class="text-white font-medium">{{ student.get_full_name|default:student.username }}</div>
+                  <div class="text-xs text-[#8b949e]">@{{ student.username }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-right">
+              <span class="text-green-400 font-bold text-lg">{{ student.solved }}</span>
+              <span class="text-[#8b949e] text-sm ml-1">solved</span>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="px-6 py-12 text-center text-[#8b949e]">No submissions yet. Be the first!</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,165 @@
+/* ─── Scrollbar (dark default) ──────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #0d1117; }
+::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #8b949e; }
+
+/* ─── Monaco editor ─────────────────────────────────────────────────── */
+.monaco-editor .margin { background: #161b22 !important; }
+
+/* ─── Global form dark theme ────────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="url"],
+input[type="datetime-local"],
+textarea,
+select {
+  background-color: #0d1117 !important;
+  border-color: #30363d !important;
+  color: #c9d1d9 !important;
+  border-radius: 0.5rem !important;
+  padding: 0.5rem 0.75rem !important;
+  width: 100% !important;
+  font-size: 0.875rem !important;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: #1d4ed8 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.3) !important;
+}
+label {
+  color: #8b949e !important;
+  font-size: 0.875rem !important;
+  margin-bottom: 0.25rem !important;
+  display: block !important;
+}
+.errorlist {
+  color: #f87171 !important;
+  font-size: 0.75rem !important;
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0.25rem 0 0 !important;
+}
+
+/* ─── Sidebar link ──────────────────────────────────────────────────── */
+.sidebar-link {
+  display: flex; align-items: center; gap: 0.625rem;
+  padding: 0.5rem 0.75rem; border-radius: 0.5rem;
+  font-size: 0.875rem; color: #8b949e;
+  transition: all 0.15s; text-decoration: none;
+}
+.sidebar-link:hover, .sidebar-link.active {
+  background: #21262d; color: #c9d1d9;
+}
+
+/* ─── Line clamp ────────────────────────────────────────────────────── */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ─── Plyr dark theme ───────────────────────────────────────────────── */
+.plyr--video { border-radius: 0.75rem; }
+
+/* ─── Sidebar mobile ────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  #sidebar { display: none; }
+  #sidebar.open {
+    display: flex; position: fixed; z-index: 40;
+    height: 100vh; top: 56px; left: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   Applied when <html> has the class "light-mode"
+   ══════════════════════════════════════════════════════════════════════ */
+
+html.light-mode body {
+  background-color: #f6f8fa !important;
+  color: #24292f !important;
+}
+
+/* backgrounds */
+html.light-mode .bg-\[\#0d1117\]  { background-color: #f6f8fa !important; }
+html.light-mode .bg-\[\#161b22\]  { background-color: #ffffff !important; }
+html.light-mode .bg-\[\#21262d\]  { background-color: #f0f2f5 !important; }
+html.light-mode .bg-\[\#30363d\]  { background-color: #d0d7de !important; }
+
+/* borders */
+html.light-mode .border-\[\#30363d\] { border-color: #d0d7de !important; }
+html.light-mode .border-t.border-\[\#30363d\] { border-color: #d0d7de !important; }
+html.light-mode .border-b.border-\[\#30363d\] { border-color: #d0d7de !important; }
+
+/* text */
+html.light-mode .text-\[\#c9d1d9\]  { color: #24292f !important; }
+html.light-mode .text-\[\#8b949e\]  { color: #57606a !important; }
+html.light-mode .placeholder-\[\#8b949e\]::placeholder { color: #6e7781 !important; }
+
+/* hover text white → dark */
+html.light-mode .hover\:text-white:hover { color: #24292f !important; }
+html.light-mode a.hover\:text-white:hover { color: #0969da !important; }
+
+/* focus ring stays blue */
+html.light-mode input:focus,
+html.light-mode textarea:focus,
+html.light-mode select:focus {
+  border-color: #0969da !important;
+  box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2) !important;
+}
+
+/* forms in light mode */
+html.light-mode input[type="text"],
+html.light-mode input[type="email"],
+html.light-mode input[type="password"],
+html.light-mode input[type="number"],
+html.light-mode input[type="url"],
+html.light-mode input[type="datetime-local"],
+html.light-mode textarea,
+html.light-mode select {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+  color: #24292f !important;
+}
+html.light-mode label { color: #57606a !important; }
+
+/* sidebar in light mode */
+html.light-mode .sidebar-link { color: #57606a !important; }
+html.light-mode .sidebar-link:hover,
+html.light-mode .sidebar-link.active {
+  background: #f0f2f5 !important;
+  color: #24292f !important;
+}
+
+/* scrollbar in light mode */
+html.light-mode ::-webkit-scrollbar-track { background: #f6f8fa; }
+html.light-mode ::-webkit-scrollbar-thumb { background: #d0d7de; }
+html.light-mode ::-webkit-scrollbar-thumb:hover { background: #8b949e; }
+
+/* navbar search input light mode */
+html.light-mode nav input[type="text"] {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+  color: #24292f !important;
+}
+
+/* message boxes in light mode */
+html.light-mode .bg-green-900 { background-color: #dcfce7 !important; }
+html.light-mode .text-green-200 { color: #166534 !important; }
+html.light-mode .border-green-700 { border-color: #86efac !important; }
+html.light-mode .bg-red-900 { background-color: #fee2e2 !important; }
+html.light-mode .text-red-200 { color: #991b1b !important; }
+html.light-mode .border-red-700 { border-color: #fca5a5 !important; }
+html.light-mode .bg-blue-900 { background-color: #dbeafe !important; }
+html.light-mode .text-blue-200 { color: #1e40af !important; }
+html.light-mode .border-blue-700 { border-color: #93c5fd !important; }
+
+/* gradient hero in light mode */
+html.light-mode .from-blue-900 { --tw-gradient-from: #dbeafe !important; }
+html.light-mode .to-purple-900 { --tw-gradient-to: #ede9fe !important; }
+html.light-mode .from-blue-900.to-purple-900 h1,
+html.light-mode .from-blue-900.to-purple-900 .text-blue-400 { color: #1d4ed8 !important; }

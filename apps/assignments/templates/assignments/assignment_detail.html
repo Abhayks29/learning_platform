@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}{{ assignment.title }} — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-3xl mx-auto">
+  <a href="{% url 'course_detail' slug=assignment.course.slug %}" class="text-xs text-[#8b949e] hover:text-white">← {{ assignment.course.title }}</a>
+
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-6 mt-4">
+    <div class="flex items-start justify-between mb-4">
+      <h1 class="text-2xl font-bold text-white">{{ assignment.title }}</h1>
+      {% if assignment.due_date %}
+        <span class="text-xs px-2 py-1 rounded bg-yellow-900 text-yellow-300 whitespace-nowrap ml-4">
+          Due: {{ assignment.due_date|date:"M d, Y H:i" }}
+        </span>
+      {% endif %}
+    </div>
+    <div class="text-[#c9d1d9] mb-6">{{ assignment.description }}</div>
+    <div class="text-sm text-[#8b949e]">Max Score: <span class="text-white">{{ assignment.max_score }}</span></div>
+
+    {% if submission %}
+      <div class="mt-6 border-t border-[#30363d] pt-6">
+        <h2 class="font-semibold text-white mb-3">Your Submission</h2>
+        <div class="flex items-center gap-3 mb-3">
+          <span class="text-xs px-2 py-0.5 rounded
+            {% if submission.status == 'graded' %}bg-green-900 text-green-300{% else %}bg-yellow-900 text-yellow-300{% endif %}">
+            {{ submission.get_status_display }}
+          </span>
+          {% if submission.score is not None %}
+            <span class="text-white font-semibold">{{ submission.score }}/{{ assignment.max_score }}</span>
+          {% endif %}
+        </div>
+        {% if submission.text_response %}
+          <div class="bg-[#0d1117] rounded-lg p-4 text-sm text-[#c9d1d9] mb-3">{{ submission.text_response }}</div>
+        {% endif %}
+        {% if submission.file %}
+          <a href="{{ submission.file.url }}" class="text-blue-400 hover:text-blue-300 text-sm">📎 Download Attachment</a>
+        {% endif %}
+        {% if submission.feedback %}
+          <div class="mt-4 bg-blue-900 bg-opacity-30 border border-blue-800 rounded-lg p-4">
+            <p class="text-xs text-blue-400 font-semibold mb-1">Teacher Feedback</p>
+            <p class="text-sm text-[#c9d1d9]">{{ submission.feedback }}</p>
+          </div>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="mt-6">
+        <a href="{% url 'submission_create' assignment_id=assignment.id %}"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+          Submit Assignment
+        </a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

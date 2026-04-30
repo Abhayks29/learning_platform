@@ -1,0 +1,73 @@
+{% load static %}
+<nav class="bg-[#161b22] border-b border-[#30363d] px-4 py-3 flex items-center justify-between sticky top-0 z-50">
+  <div class="flex items-center gap-4">
+    <button id="sidebar-toggle" class="text-[#8b949e] hover:text-white p-1 rounded">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+      </svg>
+    </button>
+    <a href="{% url 'home' %}" class="text-xl font-bold text-blue-400 hover:text-blue-300">&lt;EdTech/&gt;</a>
+  </div>
+
+  <div class="flex-1 max-w-md mx-4 hidden md:block">
+    <form action="{% url 'course_list' %}" method="get">
+      <input type="text" name="q" placeholder="Search courses..."
+        class="w-full bg-[#0d1117] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#c9d1d9] placeholder-[#8b949e] focus:outline-none focus:border-blue-500">
+    </form>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <!-- Dark/Light toggle -->
+    <button id="theme-toggle" onclick="window.toggleTheme()" title="Toggle theme"
+      class="p-1.5 rounded-lg text-[#8b949e] hover:text-white hover:bg-[#21262d] transition">
+      <!-- Sun icon (shown in dark mode) -->
+      <svg id="icon-sun" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/>
+      </svg>
+      <!-- Moon icon (shown in light mode) -->
+      <svg id="icon-moon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+      </svg>
+    </button>
+
+    <a href="{% url 'course_list' %}" class="text-sm text-[#8b949e] hover:text-white hidden sm:block">Courses</a>
+    <a href="{% url 'problem_list' %}" class="text-sm text-[#8b949e] hover:text-white hidden sm:block">Practice</a>
+
+    {% if user.is_authenticated %}
+      <a href="{% url 'leaderboard' %}" class="text-sm text-[#8b949e] hover:text-white hidden sm:block">Leaderboard</a>
+      <div class="relative" x-data="{ open: false }">
+        <button onclick="this.nextElementSibling.classList.toggle('hidden')"
+          class="flex items-center gap-2 text-sm text-[#c9d1d9] hover:text-white">
+          {% if user.avatar %}
+            <img src="{{ user.avatar.url }}" class="w-8 h-8 rounded-full object-cover border border-[#30363d]" alt="{{ user.username }}">
+          {% else %}
+            <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs">
+              {{ user.username|slice:":1"|upper }}
+            </div>
+          {% endif %}
+          <span class="hidden md:block">{{ user.username }}</span>
+          <span class="text-xs px-1.5 py-0.5 rounded
+            {% if user.role == 'admin' %}bg-red-900 text-red-300
+            {% elif user.role == 'teacher' %}bg-purple-900 text-purple-300
+            {% else %}bg-green-900 text-green-300{% endif %}">
+            {{ user.get_role_display }}
+          </span>
+        </button>
+        <div class="hidden absolute right-0 mt-2 w-48 bg-[#161b22] border border-[#30363d] rounded-lg shadow-xl z-50">
+          <a href="{% url 'dashboard_redirect' %}" class="block px-4 py-2 text-sm text-[#c9d1d9] hover:bg-[#21262d]">Dashboard</a>
+          <a href="{% url 'profile' %}" class="block px-4 py-2 text-sm text-[#c9d1d9] hover:bg-[#21262d]">Profile</a>
+          <hr class="border-[#30363d] my-1">
+          <form method="post" action="{% url 'account_logout' %}">
+            {% csrf_token %}
+            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-[#21262d]">Sign Out</button>
+          </form>
+        </div>
+      </div>
+    {% else %}
+      <a href="{% url 'account_login' %}" class="text-sm text-[#8b949e] hover:text-white">Login</a>
+      <a href="{% url 'register' %}" class="text-sm bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Sign Up</a>
+    {% endif %}
+  </div>
+</nav>

@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}Courses — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6">
+  <h1 class="text-3xl font-bold text-white mb-2">Courses</h1>
+  <p class="text-[#8b949e] mb-6">Expand your skills with expert-led courses.</p>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap gap-4 mb-6">
+    <form method="get" class="flex gap-3 flex-wrap">
+      <input type="text" name="q" value="{{ search }}" placeholder="Search courses..."
+        class="bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#c9d1d9] placeholder-[#8b949e] focus:outline-none focus:border-blue-500">
+      <select name="category"
+        class="bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#c9d1d9] focus:outline-none focus:border-blue-500">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+          <option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Filter</button>
+      {% if search or selected_category %}
+        <a href="{% url 'course_list' %}" class="text-[#8b949e] hover:text-white px-4 py-2 rounded-lg text-sm border border-[#30363d]">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Course Grid -->
+  {% if courses %}
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for course in courses %}
+        <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden hover:border-blue-500 transition group">
+          {% if course.thumbnail %}
+            <img src="{{ course.thumbnail.url }}" alt="{{ course.title }}" class="w-full h-40 object-cover">
+          {% else %}
+            <div class="w-full h-40 bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center">
+              <svg class="w-14 h-14 text-blue-400 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/>
+              </svg>
+            </div>
+          {% endif %}
+          <div class="p-5">
+            {% if course.category %}
+              <span class="text-xs text-blue-400 font-semibold uppercase tracking-wide">{{ course.category.name }}</span>
+            {% endif %}
+            <h3 class="text-white font-semibold mt-1 mb-2 group-hover:text-blue-400 transition line-clamp-2">{{ course.title }}</h3>
+            <p class="text-[#8b949e] text-sm line-clamp-2 mb-4">{{ course.description|truncatewords:18 }}</p>
+            <div class="flex items-center justify-between text-xs text-[#8b949e]">
+              <span>{{ course.get_lesson_count }} lessons · {{ course.get_total_duration }} min</span>
+              <span>{{ course.get_enrollment_count }} students</span>
+            </div>
+            <div class="flex items-center justify-between mt-3 pt-3 border-t border-[#30363d]">
+              <span class="text-xs text-[#8b949e]">by {{ course.teacher.get_full_name|default:course.teacher.username }}</span>
+              {% if course.id in enrolled_ids %}
+                <a href="{% url 'course_detail' slug=course.slug %}" class="text-xs text-green-400 font-medium">✓ Enrolled</a>
+              {% else %}
+                <a href="{% url 'course_detail' slug=course.slug %}" class="text-xs text-blue-400 hover:text-blue-300 font-medium">View Course →</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="text-center py-16 text-[#8b949e]">
+      <svg class="w-12 h-12 mx-auto mb-4 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+      <p>No courses found matching your filters.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

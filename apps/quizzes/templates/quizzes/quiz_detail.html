@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ quiz.title }} — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6 max-w-3xl mx-auto">
+  <a href="{% url 'course_detail' slug=course.slug %}" class="text-xs text-[#8b949e] hover:text-white">← {{ course.title }}</a>
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl p-8 mt-4">
+    <h1 class="text-2xl font-bold text-white mb-2">{{ quiz.title }}</h1>
+    {% if quiz.description %}
+      <p class="text-[#8b949e] mb-6">{{ quiz.description }}</p>
+    {% endif %}
+
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="bg-[#0d1117] rounded-lg p-4 text-center">
+        <div class="text-2xl font-bold text-blue-400">{{ quiz.get_question_count }}</div>
+        <div class="text-xs text-[#8b949e]">Questions</div>
+      </div>
+      <div class="bg-[#0d1117] rounded-lg p-4 text-center">
+        <div class="text-2xl font-bold text-yellow-400">{{ quiz.time_limit_minutes }}</div>
+        <div class="text-xs text-[#8b949e]">Minutes</div>
+      </div>
+      <div class="bg-[#0d1117] rounded-lg p-4 text-center">
+        <div class="text-2xl font-bold text-green-400">{{ quiz.passing_score }}%</div>
+        <div class="text-xs text-[#8b949e]">Pass Score</div>
+      </div>
+    </div>
+
+    {% if already_attempted %}
+      <div class="bg-green-900 border border-green-700 rounded-lg p-4 mb-6 text-green-300 text-sm">
+        ✓ You have already completed this quiz.
+      </div>
+    {% endif %}
+
+    <a href="{% url 'quiz_start' quiz_id=quiz.id %}"
+      class="block w-full text-center bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg">
+      {% if already_attempted %}Retake Quiz{% else %}Start Quiz{% endif %}
+    </a>
+  </div>
+</div>
+{% endblock %}

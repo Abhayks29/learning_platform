@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Manage Problems — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-white">Practice Problems</h1>
+    <a href="{% url 'problem_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium">+ New Problem</a>
+  </div>
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+    <table class="w-full">
+      <thead>
+        <tr class="border-b border-[#30363d]">
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Title</th>
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Difficulty</th>
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Tags</th>
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Test Cases</th>
+          <th class="px-6 py-3 text-left text-xs text-[#8b949e] uppercase font-semibold">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for problem in problems %}
+          <tr class="border-b border-[#30363d] hover:bg-[#21262d]">
+            <td class="px-6 py-4 text-white font-medium">{{ problem.title }}</td>
+            <td class="px-6 py-4">
+              <span class="text-xs font-semibold
+                {% if problem.difficulty == 'easy' %}text-green-400
+                {% elif problem.difficulty == 'medium' %}text-yellow-400
+                {% else %}text-red-400{% endif %}">
+                {{ problem.get_difficulty_display }}
+              </span>
+            </td>
+            <td class="px-6 py-4 text-sm text-[#8b949e]">{{ problem.tags|truncatechars:30 }}</td>
+            <td class="px-6 py-4 text-[#c9d1d9]">{{ problem.test_cases.count }}</td>
+            <td class="px-6 py-4">
+              <div class="flex gap-3 text-xs">
+                <a href="{% url 'problem_detail' slug=problem.slug %}" class="text-blue-400 hover:text-blue-300">View</a>
+                <a href="{% url 'problem_edit' slug=problem.slug %}" class="text-yellow-400 hover:text-yellow-300">Edit</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="px-6 py-12 text-center text-[#8b949e]">No problems yet. <a href="{% url 'problem_create' %}" class="text-blue-400">Create one →</a></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

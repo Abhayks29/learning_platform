@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Practice Problems — EdTech{% endblock %}
+
+{% block content %}
+<div class="p-6">
+  <h1 class="text-3xl font-bold text-white mb-2">Practice Problems</h1>
+  <p class="text-[#8b949e] mb-6">Sharpen your coding skills with real interview problems.</p>
+
+  <!-- Filters -->
+  <form method="get" class="flex flex-wrap gap-3 mb-6">
+    <input type="text" name="q" value="{{ search }}" placeholder="Search problems..."
+      class="bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#c9d1d9] placeholder-[#8b949e] focus:outline-none focus:border-blue-500">
+    <select name="difficulty"
+      class="bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#c9d1d9] focus:outline-none focus:border-blue-500">
+      <option value="">All Difficulties</option>
+      <option value="easy" {% if difficulty == 'easy' %}selected{% endif %}>Easy</option>
+      <option value="medium" {% if difficulty == 'medium' %}selected{% endif %}>Medium</option>
+      <option value="hard" {% if difficulty == 'hard' %}selected{% endif %}>Hard</option>
+    </select>
+    {% if user.is_authenticated %}
+      <select name="status"
+        class="bg-[#161b22] border border-[#30363d] rounded-lg px-4 py-2 text-sm text-[#c9d1d9] focus:outline-none focus:border-blue-500">
+        <option value="">All Status</option>
+        <option value="solved" {% if status_filter == 'solved' %}selected{% endif %}>Solved</option>
+        <option value="attempted" {% if status_filter == 'attempted' %}selected{% endif %}>Attempted</option>
+        <option value="unsolved" {% if status_filter == 'unsolved' %}selected{% endif %}>Unsolved</option>
+      </select>
+    {% endif %}
+    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium">Filter</button>
+    {% if search or difficulty or status_filter %}
+      <a href="{% url 'problem_list' %}" class="text-[#8b949e] hover:text-white px-4 py-2 rounded-lg text-sm border border-[#30363d]">Clear</a>
+    {% endif %}
+  </form>
+
+  <!-- Problems Table -->
+  <div class="bg-[#161b22] border border-[#30363d] rounded-xl overflow-hidden">
+    <table class="w-full">
+      <thead>
+        <tr class="border-b border-[#30363d] text-left">
+          <th class="px-6 py-3 text-xs text-[#8b949e] uppercase font-semibold w-12">Status</th>
+          <th class="px-6 py-3 text-xs text-[#8b949e] uppercase font-semibold">#</th>
+          <th class="px-6 py-3 text-xs text-[#8b949e] uppercase font-semibold">Title</th>
+          <th class="px-6 py-3 text-xs text-[#8b949e] uppercase font-semibold">Difficulty</th>
+          <th class="px-6 py-3 text-xs text-[#8b949e] uppercase font-semibold">Tags</th>
+          <th class="px-6 py-3 text-xs text-[#8b949e] uppercase font-semibold text-right">Acceptance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for problem in problems %}
+          <tr class="border-b border-[#30363d] hover:bg-[#21262d] transition">
+            <td class="px-6 py-4 text-center">
+              {% if problem.id in solved_ids %}
+                <span class="text-green-400 text-lg" title="Solved">✓</span>
+              {% elif problem.id in attempted_ids %}
+                <span class="text-yellow-400 text-sm" title="Attempted">◐</span>
+              {% else %}
+                <span class="text-[#30363d] text-sm">○</span>
+              {% endif %}
+            </td>
+            <td class="px-6 py-4 text-[#8b949e] text-sm font-mono">{{ forloop.counter }}</td>
+            <td class="px-6 py-4">
+              <a href="{% url 'problem_detail' slug=problem.slug %}"
+                class="text-white hover:text-blue-400 font-medium transition">{{ problem.title }}</a>
+            </td>
+            <td class="px-6 py-4">
+              <span class="text-xs font-semibold
+                {% if problem.difficulty == 'easy' %}text-green-400
+                {% elif problem.difficulty == 'medium' %}text-yellow-400
+                {% else %}text-red-400{% endif %}">
+                {{ problem.get_difficulty_display }}
+              </span>
+            </td>
+            <td class="px-6 py-4">
+              <div class="flex flex-wrap gap-1">
+                {% for tag in problem.get_tag_list|slice:":3" %}
+                  <span class="text-xs bg-[#21262d] text-[#8b949e] px-2 py-0.5 rounded">{{ tag }}</span>
+                {% endfor %}
+              </div>
+            </td>
+            <td class="px-6 py-4 text-right text-[#8b949e] text-sm">
+              {% if problem.total_submissions > 0 %}
+                {{ problem.accepted_count|floatformat:0 }}/{{ problem.total_submissions }}
+                <span class="text-xs">({{ problem.get_acceptance_rate }}%)</span>
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="px-6 py-16 text-center text-[#8b949e]">
+              No problems found.
+              {% if user.role == 'teacher' or user.is_staff %}
+                <a href="{% url 'problem_create' %}" class="text-blue-400 ml-1">Create one →</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
