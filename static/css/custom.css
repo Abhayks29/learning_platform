@@ -163,3 +163,36 @@ html.light-mode .from-blue-900 { --tw-gradient-from: #dbeafe !important; }
 html.light-mode .to-purple-900 { --tw-gradient-to: #ede9fe !important; }
 html.light-mode .from-blue-900.to-purple-900 h1,
 html.light-mode .from-blue-900.to-purple-900 .text-blue-400 { color: #1d4ed8 !important; }
+
+/* ── Light mode: white text → dark on light backgrounds ──────────────── */
+
+/* Headings */
+html.light-mode h1.text-white,
+html.light-mode h2.text-white,
+html.light-mode h3.text-white,
+html.light-mode h4.text-white { color: #24292f !important; }
+
+/* Paragraphs and inline text */
+html.light-mode p.text-white    { color: #24292f !important; }
+html.light-mode span.text-white { color: #24292f !important; }
+
+/* Divs used as text containers (step numbers, stat labels) */
+html.light-mode div.text-white  { color: #24292f !important; }
+
+/* Secondary ghost button: bg goes light-grey so text must go dark */
+html.light-mode a.bg-\[\#21262d\],
+html.light-mode button.bg-\[\#21262d\] { color: #24292f !important; }
+
+/* Keep white text on solid blue primary buttons */
+html.light-mode a.bg-blue-600,
+html.light-mode button.bg-blue-600 { color: #ffffff !important; }
+
+/* Stats bar semi-transparent bg */
+html.light-mode .bg-\[\#161b22\]\/50 { background-color: rgba(235,238,242,0.85) !important; }
+
+/* Streak section stat values (orange/yellow are dim on white) */
+html.light-mode .text-orange-400 { color: #c2410c !important; }
+html.light-mode .text-yellow-400 { color: #a16207 !important; }
+
+/* Section dividers stay visible */
+html.light-mode .border-y.border-\[\#30363d\] { border-color: #d0d7de !important; }
