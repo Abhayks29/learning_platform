@@ -13,47 +13,77 @@
   window.addEventListener('resize', resize);
 
   // ── 3-D math ─────────────────────────────────────────────────────────────
-  const dot  = (a, b) => a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
-  const norm = v => { const l = Math.sqrt(dot(v,v)); return [v[0]/l,v[1]/l,v[2]/l]; };
-
   function rotY([x,y,z], a) { const c=Math.cos(a),s=Math.sin(a); return [c*x+s*z, y, -s*x+c*z]; }
   function rotX([x,y,z], a) { const c=Math.cos(a),s=Math.sin(a); return [x, c*y-s*z, s*y+c*z]; }
-
-  // Camera at z=+FOV looking toward −z
   function project([x,y,z], fov, cx, cy) {
     const s = fov / (fov - z);
-    return [cx + x*s, cy + y*s];
+    return [cx + x*s, cy + y*s, s];   // [screenX, screenY, perspectiveScale]
   }
 
-  // ── Geometry ──────────────────────────────────────────────────────────────
-  const VERTS = [
-    [-0.5,-0.5,-0.5],[0.5,-0.5,-0.5],[0.5,0.5,-0.5],[-0.5,0.5,-0.5],
-    [-0.5,-0.5, 0.5],[0.5,-0.5, 0.5],[0.5,0.5, 0.5],[-0.5,0.5, 0.5],
-  ];
-  const FACES = [
-    { vi:[0,1,2,3], n:[0,0,-1] },  // back
-    { vi:[5,4,7,6], n:[0,0, 1] },  // front
-    { vi:[4,0,3,7], n:[-1,0,0] },  // left
-    { vi:[1,5,6,2], n:[ 1,0,0] },  // right
-    { vi:[4,5,1,0], n:[0,-1,0] },  // bottom
-    { vi:[3,2,6,7], n:[0, 1,0] },  // top
+  // ── Network topology: 4 layers ────────────────────────────────────────────
+  const LAYER_SIZES = [4, 5, 5, 3];
+  const LAYER_X     = [-3.2, -1.0, 1.0, 3.2];
+
+  // Layer accent colours  [bright, dark]
+  const LAYER_COLORS = [
+    ['#c084fc', '#581c87'],   // input  — purple
+    ['#60a5fa', '#1e3a8a'],   // h-1    — blue
+    ['#38bdf8', '#0c4a6e'],   // h-2    — cyan-blue
+    ['#34d399', '#064e3b'],   // output — emerald
   ];
 
-  const LIGHT   = norm([1.5, -2, 1.2]);   // surface → light direction (world space)
-  const AMBIENT = 0.20;
-  const DIFFUSE = 0.80;
+  // Build nodes
+  const nodes = [];
+  for (let l = 0; l < LAYER_SIZES.length; l++) {
+    const count = LAYER_SIZES[l];
+    for (let i = 0; i < count; i++) {
+      const y  = (i - (count - 1) / 2) * 1.5;
+      const z  = Math.sin(l * 2.1 + i * 1.7) * 0.5;   // slight Z scatter
+      nodes.push({ x: LAYER_X[l], y, z, layer: l, localIdx: i });
+    }
+  }
 
-  const SP = 1.22;
-  const OFFSETS = [
-    [0,0,0],
-    [ SP,0,0],[-SP,0,0],
-    [0, SP,0],[0,-SP,0],
-    [0,0, SP],[0,0,-SP],
-  ];
+  // Build fully-connected edges between adjacent layers
+  const edges = [];
+  let offset = 0;
+  for (let l = 0; l < LAYER_SIZES.length - 1; l++) {
+    for (let i = 0; i < LAYER_SIZES[l]; i++) {
+      for (let j = 0; j < LAYER_SIZES[l + 1]; j++) {
+        edges.push({
+          from:   offset + i,
+          to:     offset + LAYER_SIZES[l] + j,
+          weight: 0.25 + Math.random() * 0.75,
+        });
+      }
+    }
+    offset += LAYER_SIZES[l];
+  }
 
-  // ── Mouse / hover (whole-cube) ────────────────────────────────────────────
-  let mx = -1e9, my = -1e9, hovCube = null;
+  // Build adjacency for hover highlight
+  const nodeEdges = nodes.map(() => []);
+  edges.forEach((e, ei) => { nodeEdges[e.from].push(ei); nodeEdges[e.to].push(ei); });
 
+  // ── Signal particles (travel from→to along an edge) ───────────────────────
+  const signals = [];
+
+  function spawnSignal(edgeIdx) {
+    signals.push({
+      ei:       edgeIdx,
+      progress: 0,
+      speed:    0.0035 + Math.random() * 0.005,
+      hue:      Math.random() < 0.55 ? '#60a5fa' : '#a78bfa',
+      r:        2.5 + Math.random() * 2,
+    });
+  }
+
+  // Seed initial signals staggered across all edges
+  for (let i = 0; i < 14; i++) {
+    spawnSignal(Math.floor(Math.random() * edges.length));
+    signals[i].progress = Math.random();
+  }
+
+  // ── Mouse hover ───────────────────────────────────────────────────────────
+  let mx = -1e9, my = -1e9, hovNode = null;
   canvas.addEventListener('mousemove', e => {
     const r = canvas.getBoundingClientRect();
     mx = e.clientX - r.left;
@@ -61,132 +91,160 @@
   });
   canvas.addEventListener('mouseleave', () => { mx = my = -1e9; });
 
-  function pointInPoly(px, py, pts) {
-    let inside = false;
-    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
-      const [xi,yi] = pts[i], [xj,yj] = pts[j];
-      if ((yi > py) !== (yj > py) && px < (xj-xi)*(py-yi)/(yj-yi)+xi)
-        inside = !inside;
-    }
-    return inside;
-  }
-
-  // ── Rounded quad path ─────────────────────────────────────────────────────
-  function roundedQuad(pts, r) {
-    ctx.beginPath();
-    const n = pts.length;
-    for (let i = 0; i < n; i++) {
-      const p  = pts[i];
-      const pr = pts[(i+n-1)%n];
-      const nx = pts[(i+1)%n];
-      const d1x=pr[0]-p[0], d1y=pr[1]-p[1], l1=Math.sqrt(d1x*d1x+d1y*d1y);
-      const d2x=nx[0]-p[0], d2y=nx[1]-p[1], l2=Math.sqrt(d2x*d2x+d2y*d2y);
-      const rr = Math.min(r, l1*0.45, l2*0.45);
-      const t1x=p[0]+(d1x/l1)*rr, t1y=p[1]+(d1y/l1)*rr;
-      const t2x=p[0]+(d2x/l2)*rr, t2y=p[1]+(d2y/l2)*rr;
-      if (i === 0) ctx.moveTo(t1x,t1y); else ctx.lineTo(t1x,t1y);
-      ctx.quadraticCurveTo(p[0],p[1],t2x,t2y);
-    }
-    ctx.closePath();
-  }
-
-  // ── Animation ────────────────────────────────────────────────────────────
+  // ── Animation state ───────────────────────────────────────────────────────
   let yAngle = 0;
-  const TILT  = 0.32;
+  const TILT  = 0.28;
 
+  // ── Frame ─────────────────────────────────────────────────────────────────
   function frame() {
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
-    yAngle += 0.007;
+    yAngle += 0.006;
 
-    const WS      = Math.min(W,H) * 0.115;   // world-unit → pixel
-    const FOV     = Math.min(W,H) * 1.6;
-    const cx = W/2, cy = H/2;
-    const cornerR = WS * 0.36;               // pillowy rounded corners
+    const SCALE = Math.min(W, H) * 0.10;
+    const FOV   = Math.min(W, H) * 2.0;
+    const cx = W / 2, cy = H / 2;
+    const NODE_R = SCALE * 0.14;   // base node radius (world-space px)
 
-    // ── Build face list ───────────────────────────────────────────────────
-    const faces = [];
+    // Project all nodes
+    const proj = nodes.map(n => {
+      let p = [n.x * SCALE, n.y * SCALE, n.z * SCALE];
+      p = rotX(p, TILT);
+      p = rotY(p, yAngle);
+      return project(p, FOV, cx, cy);
+    });
 
-    for (let ci = 0; ci < OFFSETS.length; ci++) {
-      const [opx,opy,opz] = OFFSETS[ci];
+    // Hit-test: nearest node within threshold
+    hovNode = null;
+    let bestD = NODE_R * 2.5;
+    for (let i = 0; i < proj.length; i++) {
+      const d = Math.hypot(proj[i][0] - mx, proj[i][1] - my);
+      if (d < bestD) { bestD = d; hovNode = i; }
+    }
 
-      const tverts = VERTS.map(([vx,vy,vz]) => {
-        let p = [(vx+opx)*WS, (vy+opy)*WS, (vz+opz)*WS];
-        p = rotX(p, TILT);
-        p = rotY(p, yAngle);
-        return p;
+    // Highlighted set for hovered node
+    const hlEdges = new Set();
+    const hlNodes = new Set();
+    if (hovNode !== null) {
+      hlNodes.add(hovNode);
+      nodeEdges[hovNode].forEach(ei => {
+        hlEdges.add(ei);
+        hlNodes.add(edges[ei].from);
+        hlNodes.add(edges[ei].to);
       });
-
-      for (let fi = 0; fi < FACES.length; fi++) {
-        const { vi, n } = FACES[fi];
-        let wn = rotX(n, TILT);
-        wn = rotY(wn, yAngle);
-        if (wn[2] <= 0) continue;                    // backface cull
-
-        const bright = Math.min(1, AMBIENT + Math.max(0, dot(wn, LIGHT)) * DIFFUSE);
-        const pts2d  = vi.map(i => project(tverts[i], FOV, cx, cy));
-        const fz     = vi.reduce((s,i) => s+tverts[i][2], 0) / vi.length;
-        const fcx    = pts2d.reduce((s,p) => s+p[0], 0) / pts2d.length;
-        const fcy    = pts2d.reduce((s,p) => s+p[1], 0) / pts2d.length;
-        const faceR  = Math.max(...pts2d.map(([px,py]) => Math.hypot(px-fcx, py-fcy))) * 1.25;
-
-        faces.push({ pts2d, bright, ci, fi, fcx, fcy, fz, faceR });
-      }
     }
 
-    // Painter's sort: back → front
-    faces.sort((a,b) => a.fz - b.fz);
+    // ── 1. Draw edges ────────────────────────────────────────────────────────
+    for (let ei = 0; ei < edges.length; ei++) {
+      const e    = edges[ei];
+      const [ax, ay] = proj[e.from];
+      const [bx, by] = proj[e.to];
+      const hl   = hlEdges.has(ei);
+      const base = hl ? e.weight * 0.85 : e.weight * 0.18;
 
-    // ── Hit test (front → back) — track cube, not face ────────────────────
-    hovCube = null;
-    for (let i = faces.length - 1; i >= 0; i--) {
-      if (pointInPoly(mx, my, faces[i].pts2d)) {
-        hovCube = faces[i].ci;
-        break;
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+
+      if (hl) {
+        ctx.strokeStyle  = `rgba(96,165,250,${base.toFixed(2)})`;
+        ctx.lineWidth    = 1.6;
+        ctx.shadowColor  = '#3b82f6';
+        ctx.shadowBlur   = 8;
+      } else {
+        ctx.strokeStyle = `rgba(55,95,200,${base.toFixed(2)})`;
+        ctx.lineWidth   = 0.8;
+        ctx.shadowBlur  = 0;
       }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
     }
 
-    // ── Glow pass: hovered cube rendered first with large shadow ──────────
-    if (hovCube !== null) {
-      ctx.save();
-      ctx.shadowColor = '#60a5fa';
-      ctx.shadowBlur  = 38;
-      for (const { pts2d, ci } of faces) {
-        if (ci !== hovCube) continue;
-        roundedQuad(pts2d, cornerR);
-        ctx.fillStyle = 'rgba(96,165,250,0.55)';
+    // ── 2. Update + draw signal particles ────────────────────────────────────
+    for (let i = signals.length - 1; i >= 0; i--) {
+      const sig = signals[i];
+      sig.progress += sig.speed;
+      if (sig.progress >= 1) {
+        signals.splice(i, 1);
+        spawnSignal(Math.floor(Math.random() * edges.length));
+        continue;
+      }
+      const e  = edges[sig.ei];
+      const [ax, ay, as_] = proj[e.from];
+      const [bx, by, bs]  = proj[e.to];
+      const t   = sig.progress;
+      const sx  = ax + (bx - ax) * t;
+      const sy  = ay + (by - ay) * t;
+      const sr  = sig.r * (as_ * (1-t) + bs * t);  // perspective-scaled radius
+
+      // Soft trail
+      const trailLen = 0.06;
+      const t0 = Math.max(0, t - trailLen);
+      const tx0 = ax + (bx - ax) * t0;
+      const ty0 = ay + (by - ay) * t0;
+      const trailGrad = ctx.createLinearGradient(tx0, ty0, sx, sy);
+      trailGrad.addColorStop(0, `${sig.hue}00`);
+      trailGrad.addColorStop(1, `${sig.hue}cc`);
+      ctx.beginPath();
+      ctx.moveTo(tx0, ty0);
+      ctx.lineTo(sx, sy);
+      ctx.strokeStyle = trailGrad;
+      ctx.lineWidth   = sr * 0.9;
+      ctx.stroke();
+
+      // Head dot
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fillStyle   = sig.hue;
+      ctx.shadowColor = sig.hue;
+      ctx.shadowBlur  = 14;
+      ctx.fill();
+      ctx.shadowBlur  = 0;
+    }
+
+    // ── 3. Draw nodes (back → front by perspective scale) ────────────────────
+    const order = nodes.map((n,i) => i).sort((a,b) => proj[a][2] - proj[b][2]);
+
+    for (const i of order) {
+      const n    = nodes[i];
+      const [px, py, ps] = proj[i];
+      const hl   = hlNodes.has(i);
+      const r    = NODE_R * ps;    // perspective-scaled radius
+      const [bright, dark] = LAYER_COLORS[n.layer];
+
+      // Outer glow ring
+      if (hl) {
+        ctx.beginPath();
+        ctx.arc(px, py, r * 2.8, 0, Math.PI * 2);
+        const glowG = ctx.createRadialGradient(px, py, r * 0.5, px, py, r * 2.8);
+        glowG.addColorStop(0, bright + '55');
+        glowG.addColorStop(1, bright + '00');
+        ctx.fillStyle = glowG;
         ctx.fill();
       }
-      ctx.restore();
-    }
 
-    // ── Main draw pass ────────────────────────────────────────────────────
-    for (const { pts2d, bright, ci, fcx, fcy, faceR } of faces) {
-      const hov = (ci === hovCube);
+      // Node body with radial gradient
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      const ng = ctx.createRadialGradient(
+        px - r * 0.3, py - r * 0.35, 0,
+        px,           py,            r
+      );
+      ng.addColorStop(0,   hl ? '#ffffff' : bright);
+      ng.addColorStop(0.4, bright);
+      ng.addColorStop(1,   dark);
+      ctx.fillStyle   = ng;
+      ctx.shadowColor = bright;
+      ctx.shadowBlur  = hl ? 20 : 10;
+      ctx.fill();
+      ctx.shadowBlur  = 0;
 
-      roundedQuad(pts2d, cornerR);
-
-      // --- Base flat fill (brightness from light direction) ---
-      if (hov) {
-        ctx.fillStyle = `rgb(${~~(bright*40)},${~~(bright*105)},${~~(bright*235)})`;
-      } else {
-        ctx.fillStyle = `rgb(${~~(bright*18)},${~~(bright*58)},${~~(bright*175)})`;
-      }
-      ctx.fill();   // path remains active for next fill
-
-      // --- Pillow radial gradient overlay (convex highlight) ---
-      const g = ctx.createRadialGradient(fcx, fcy, 0, fcx, fcy, faceR);
-      if (hov) {
-        g.addColorStop(0,   `rgba(180,215,255,${(0.52+bright*0.25).toFixed(2)})`);
-        g.addColorStop(0.42,`rgba(90,150,245,0.10)`);
-        g.addColorStop(1,   'rgba(0,0,0,0)');
-      } else {
-        g.addColorStop(0,   `rgba(130,165,240,${(0.40+bright*0.18).toFixed(2)})`);
-        g.addColorStop(0.45,'rgba(65,105,200,0.07)');
-        g.addColorStop(1,   'rgba(0,0,0,0)');
-      }
-      ctx.fillStyle = g;
-      ctx.fill();   // same path, additive overlay → pillowy look
+      // Thin bright rim
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.strokeStyle = hl ? bright : bright + '66';
+      ctx.lineWidth   = hl ? 1.5 : 0.6;
+      ctx.stroke();
     }
 
     requestAnimationFrame(frame);
